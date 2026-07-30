@@ -266,7 +266,7 @@ export default function AIChatWidget({ externalOpen, onExternalOpenChange, onReq
 
       {/* Chat panel */}
       <div
-        className={`fixed bottom-24 right-6 z-50 w-[360px] sm:w-[400px] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
+        className={`fixed bottom-24 right-3 sm:right-6 left-3 sm:left-auto max-w-[400px] sm:w-[400px] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
           open
             ? 'opacity-100 scale-100 pointer-events-auto'
             : 'opacity-0 scale-90 pointer-events-none'

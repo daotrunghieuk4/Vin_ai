@@ -1,25 +1,42 @@
-import { useState } from 'react';
-import { LayoutGrid, ChevronRight, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { LayoutGrid, ChevronRight, Zap, Car, Bike } from 'lucide-react';
 import { vehicles } from '@/data/vehicles';
 import VehicleCard from '@/components/VehicleCard';
-import type { Vehicle } from '@/types';
-
-type FilterTab = 'all' | 'suv' | 'scooter';
+import type { Vehicle, FilterCategory } from '@/types';
 
 interface VehicleShowcaseProps {
   compareList: string[];
   onToggleCompare: (id: string) => void;
   onRequestQuote: (vehicle: Vehicle) => void;
+  activeCategory?: FilterCategory;
+  onCategoryChange?: (category: FilterCategory) => void;
 }
 
-const filterTabs: { id: FilterTab; label: string }[] = [
+const filterTabs: { id: FilterCategory; label: string }[] = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'suv', label: 'SUV điện' },
+  { id: 'suv', label: 'Ô tô điện' },
   { id: 'scooter', label: 'Xe máy điện' },
 ];
 
-export default function VehicleShowcase({ compareList, onToggleCompare, onRequestQuote }: VehicleShowcaseProps) {
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+export default function VehicleShowcase({
+  compareList,
+  onToggleCompare,
+  onRequestQuote,
+  activeCategory: externalCategory = 'all',
+  onCategoryChange,
+}: VehicleShowcaseProps) {
+  const [internalFilter, setInternalFilter] = useState<FilterCategory>(externalCategory);
+
+  useEffect(() => {
+    setInternalFilter(externalCategory);
+  }, [externalCategory]);
+
+  const activeFilter = internalFilter;
+
+  const handleFilterClick = (cat: FilterCategory) => {
+    setInternalFilter(cat);
+    onCategoryChange?.(cat);
+  };
 
   const filtered = vehicles.filter((v) => {
     if (activeFilter === 'all') return true;
@@ -56,7 +73,7 @@ export default function VehicleShowcase({ compareList, onToggleCompare, onReques
           {filterTabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveFilter(tab.id)}
+              onClick={() => handleFilterClick(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
                 activeFilter === tab.id
                   ? 'bg-blue-700 text-white shadow-sm'

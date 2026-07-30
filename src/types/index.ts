@@ -1,6 +1,7 @@
 export type Role = 'customer' | 'staff';
 
 export type VehicleCategory = 'suv' | 'scooter';
+export type FilterCategory = 'all' | 'suv' | 'scooter';
 
 export interface Vehicle {
   id: string;
@@ -56,3 +57,17 @@ export type ChatStage =
   | 'collecting_phone'
   | 'quote_saved'
   | 'free';
+
+export interface UserAccount {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: Role;
+  avatar?: string;
+  employeeId?: string;
+  showroom?: string;
+  position?: string;
+  memberLevel?: 'Standard' | 'Gold' | 'Platinum' | 'VIP';
+}
+

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Circle, Zap, ArrowRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Zap, ArrowRight } from 'lucide-react';
 import { heroSlides } from '@/data/vehicles';
 
 interface HeroProps {
@@ -11,6 +11,11 @@ export default function Hero({ onExplore, onChat }: HeroProps) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  const minSwipeDistance = 40;
 
   const goTo = useCallback((idx: number) => {
     if (transitioning) return;
@@ -29,6 +34,25 @@ export default function Hero({ onExplore, onChat }: HeroProps) {
     goTo((current - 1 + heroSlides.length) % heroSlides.length);
   }, [current, goTo]);
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    if (distance > minSwipeDistance) {
+      next();
+    } else if (distance < -minSwipeDistance) {
+      prev();
+    }
+  };
+
   useEffect(() => {
     if (paused) return;
     const timer = setInterval(next, 6000);
@@ -39,61 +63,73 @@ export default function Hero({ onExplore, onChat }: HeroProps) {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-gray-950"
+      className="relative w-full overflow-hidden bg-gray-950 select-none"
       style={{ height: 'min(90vh, 720px)', minHeight: '520px' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
       {/* Background images */}
       {heroSlides.map((s, i) => (
         <div
           key={s.vehicleId}
-          className="absolute inset-0 transition-opacity duration-700"
+          className="absolute inset-0 transition-opacity duration-700 overflow-hidden"
           style={{ opacity: i === current ? 1 : 0 }}
         >
           <img
             src={s.imageFallback}
             alt={s.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-[72%_center] sm:object-center transition-all duration-500"
             loading={i === 0 ? 'eager' : 'lazy'}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-black/10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-950/95 via-gray-950/70 sm:via-gray-950/50 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent pointer-events-none" />
         </div>
       ))}
 
       {/* Content */}
       <div className="relative z-10 h-full flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="max-w-2xl">
+          <div className="max-w-3xl">
 
-            {/* Badge */}
+            {/* Category / Phân khúc Badge */}
             <div
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-600/20 border border-blue-400/30 backdrop-blur-sm mb-5 transition-all duration-500 ${
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-600/30 border border-blue-400/40 backdrop-blur-md mb-3 transition-all duration-500 ${
                 transitioning ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
               }`}
             >
-              <Zap size={12} className="text-blue-400 fill-blue-400" />
-              <span className="text-xs font-semibold text-blue-300 tracking-wider uppercase">
-                VinFast Electric · 100% Điện
+              <Zap size={13} className="text-blue-400 fill-blue-400" />
+              <span className="text-xs font-extrabold text-blue-300 tracking-[0.2em] uppercase">
+                {slide.badge}
               </span>
             </div>
 
-            {/* Title */}
+            {/* Prominent Car Model Name */}
             <h1
-              className={`text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 transition-all duration-500 ${
+              className={`text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white uppercase tracking-tight leading-none mb-3 drop-shadow-xl transition-all duration-500 ${
                 transitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
               }`}
               style={{ transitionDelay: '50ms' }}
             >
-              {slide.title}
+              VINFAST <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-200 to-white">{slide.modelName}</span>
             </h1>
+
+            {/* Sub-headline Title */}
+            <h2
+              className={`text-lg sm:text-xl lg:text-2xl font-bold text-slate-200 mb-4 transition-all duration-500 ${
+                transitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+              }`}
+              style={{ transitionDelay: '80ms' }}
+            >
+              {slide.title}
+            </h2>
 
             {/* Subtitle */}
             <p
-              className={`text-base sm:text-lg text-white/75 leading-relaxed mb-8 max-w-lg transition-all duration-500 ${
-                transitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-              }`}
+              className={`text-base sm:text-lg text-white/80 leading-relaxed mb-8 max-w-[440px] transition-all duration-500 ${transitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+                }`}
               style={{ transitionDelay: '100ms' }}
             >
               {slide.subtitle}
@@ -101,9 +137,8 @@ export default function Hero({ onExplore, onChat }: HeroProps) {
 
             {/* CTAs */}
             <div
-              className={`flex flex-wrap gap-3 transition-all duration-500 ${
-                transitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-              }`}
+              className={`flex flex-wrap gap-3 transition-all duration-500 ${transitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+                }`}
               style={{ transitionDelay: '150ms' }}
             >
               <button
@@ -124,9 +159,8 @@ export default function Hero({ onExplore, onChat }: HeroProps) {
 
             {/* Stats */}
             <div
-              className={`mt-10 flex gap-8 transition-all duration-500 ${
-                transitioning ? 'opacity-0' : 'opacity-100'
-              }`}
+              className={`mt-10 flex gap-8 transition-all duration-500 ${transitioning ? 'opacity-0' : 'opacity-100'
+                }`}
               style={{ transitionDelay: '200ms' }}
             >
               {[
@@ -144,16 +178,18 @@ export default function Hero({ onExplore, onChat }: HeroProps) {
         </div>
       </div>
 
-      {/* Nav arrows */}
+      {/* Nav arrows (Hidden on mobile < sm, visible on sm and up) */}
       <button
         onClick={prev}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all hover:scale-110"
+        aria-label="Previous slide"
+        className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 items-center justify-center text-white transition-all hover:scale-110"
       >
         <ChevronLeft size={20} />
       </button>
       <button
         onClick={next}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all hover:scale-110"
+        aria-label="Next slide"
+        className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 items-center justify-center text-white transition-all hover:scale-110"
       >
         <ChevronRight size={20} />
       </button>
@@ -164,11 +200,10 @@ export default function Hero({ onExplore, onChat }: HeroProps) {
           <button
             key={i}
             onClick={() => goTo(i)}
-            className={`transition-all duration-300 rounded-full ${
-              i === current
-                ? 'w-6 h-2 bg-white'
-                : 'w-2 h-2 bg-white/40 hover:bg-white/60'
-            }`}
+            className={`transition-all duration-300 rounded-full ${i === current
+              ? 'w-6 h-2 bg-white'
+              : 'w-2 h-2 bg-white/40 hover:bg-white/60'
+              }`}
           />
         ))}
       </div>

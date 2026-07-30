@@ -87,7 +87,7 @@ export default function VehicleCard({
         {/* Category tag */}
         <div className="absolute bottom-3 left-3">
           <span className="px-2.5 py-1 bg-black/50 backdrop-blur-sm text-white text-xs font-medium rounded-full">
-            {vehicle.category === 'scooter' ? 'Xe máy điện' : 'SUV điện'}
+            {vehicle.category === 'scooter' ? 'Xe máy điện' : 'Ô tô điện'}
           </span>
         </div>
       </div>
