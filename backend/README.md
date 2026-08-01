@@ -2,7 +2,7 @@
 
 Backend được tách riêng khỏi frontend:
 
-- Frontend: `D:\Vin_ai\VINFAST_WEB`
+- Frontend: `D:\Vin_ai\frontend`
 - Backend: `D:\Vin_ai\backend`
 
 ## Cấu trúc backend
@@ -36,7 +36,7 @@ uvicorn app.main:app --reload --port 8000
 - Báo giá: `http://localhost:8000/api/quotes`
 - Đặt lịch lái thử: `http://localhost:8000/api/bookings`
 
-Với frontend Vite, tạo file `D:\Vin_ai\VINFAST_WEB\.env.local` và thêm:
+Với frontend Vite, tạo file `D:\Vin_ai\frontend\.env.local` và thêm:
 
 ```env
 VITE_API_URL=http://localhost:8000

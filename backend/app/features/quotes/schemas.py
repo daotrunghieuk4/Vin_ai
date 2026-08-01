@@ -16,6 +16,13 @@ class QuoteCreate(BaseModel):
     ai_summary: str | None = None
 
 
+class QuoteUpdateStatus(BaseModel):
+    status: str  # "approved", "rejected", "pending"
+    notes: str | None = None
+    discount: int | None = None
+    final_price: int | None = None
+
+
 class QuoteResponse(QuoteCreate):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
@@ -23,4 +30,5 @@ class QuoteResponse(QuoteCreate):
     notes: str | None = None
     created_at: datetime
     updated_at: datetime
+
 

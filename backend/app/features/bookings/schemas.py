@@ -14,9 +14,15 @@ class BookingCreate(BaseModel):
     notes: str | None = None
 
 
+class BookingUpdateStatus(BaseModel):
+    status: str  # "confirmed", "completed", "cancelled", "pending"
+    notes: str | None = None
+
+
 class BookingResponse(BookingCreate):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     status: str
     created_at: datetime
+
 
