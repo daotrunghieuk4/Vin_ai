@@ -1,5 +1,7 @@
 # Frontend VinFast
 
+Frontend gọi dữ liệu qua FastAPI. Khi deploy, đặt `VITE_API_URL` trỏ tới domain backend, không trỏ trực tiếp tới PostgreSQL hoặc Supabase database.
+
 Frontend được xây dựng bằng React, TypeScript và Vite.
 
 ## Cài đặt và chạy
@@ -24,4 +26,3 @@ npm run build
 npm run lint
 npm run typecheck
 ```
-

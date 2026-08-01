@@ -15,7 +15,8 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
 
 export const api = {
   health: () => apiFetch<{ status: string; database: string }>('/health'),
+  getCars: () => apiFetch<Record<string, unknown>[]>('/api/catalog/cars'),
+  getMotorbikes: () => apiFetch<Record<string, unknown>[]>('/api/catalog/motorbikes'),
   createQuote: <T>(payload: T) => apiFetch('/api/quotes', { method: 'POST', body: JSON.stringify(payload) }),
   createBooking: <T>(payload: T) => apiFetch('/api/bookings', { method: 'POST', body: JSON.stringify(payload) }),
 };
-

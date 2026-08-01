@@ -1,5 +1,22 @@
 # Backend FastAPI VinFast
 
+## Kết nối Supabase
+
+Backend đọc PostgreSQL qua `DATABASE_URL`. Với Supabase, đặt connection string Session Pooler trong biến môi trường và dùng schema dữ liệu `vinfast_agent`.
+
+```env
+APP_ENV=production
+DATABASE_URL=postgresql+asyncpg://postgres.PROJECT_REF:PASSWORD@POOLER_HOST:5432/postgres
+DATABASE_SSL=true
+CATALOG_SCHEMA=vinfast_agent
+BACKEND_CORS_ORIGINS=https://your-frontend-domain.example
+```
+
+Các API catalog:
+
+- `GET /api/catalog/cars`
+- `GET /api/catalog/motorbikes`
+
 Backend được tách riêng khỏi frontend:
 
 - Frontend: `D:\Vin_ai\VINFAST_WEB`
@@ -41,4 +58,3 @@ Với frontend Vite, tạo file `D:\Vin_ai\VINFAST_WEB\.env.local` và thêm:
 ```env
 VITE_API_URL=http://localhost:8000
 ```
-

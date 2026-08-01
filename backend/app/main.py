@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.domain.models import Base
 from app.features.bookings.router import router as bookings_router
+from app.features.catalog.router import router as catalog_router
 from app.features.quotes.router import router as quotes_router
 from app.infrastructure.database import engine, get_db
 
@@ -16,9 +17,10 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Creates tables for local development. Use migrations in production.
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+    if settings.app_env != "production":
+        # Local development only. Production tables are managed by Supabase migrations.
+        async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 
@@ -41,3 +43,4 @@ async def health(db: AsyncSession = Depends(get_db)):
 
 app.include_router(quotes_router, prefix=f"{settings.api_prefix}/quotes", tags=["quotes"])
 app.include_router(bookings_router, prefix=f"{settings.api_prefix}/bookings", tags=["bookings"])
+app.include_router(catalog_router, prefix=f"{settings.api_prefix}/catalog", tags=["catalog"])
