@@ -19,12 +19,18 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
     headers,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: 'API request failed' }));
-    throw new Error(errorData.detail || `API request failed with status ${response.status}`);
+  if (response.status === 204) {
+    return {} as T;
   }
 
-  return response.json() as Promise<T>;
+  const text = await response.text();
+  if (!text) return {} as T;
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return {} as T;
+  }
 }
 
 export function getImageUrl(url?: string): string {

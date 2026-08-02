@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   X, Users, Car, FileText, Calendar, Plus, Trash2, Edit3, CheckCircle2,
-  XCircle, RefreshCw, ShieldCheck, Search, Loader2, UserPlus, Phone, Mail, Award, Lock, Upload, ArrowRight, Download, Zap
+  XCircle, RefreshCw, ShieldCheck, Search, Loader2, UserPlus, Phone, Mail, Award, Lock, Upload, ArrowRight, Download, Zap, AlertTriangle
 } from 'lucide-react';
 import { api, getImageUrl, formatVNDPrice } from '@/lib/api';
 
@@ -88,6 +88,11 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [showCarModal, setShowCarModal] = useState(false);
   const [editingCar, setEditingCar] = useState<any | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: 'user' | 'car' | 'escooter';
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Forms state
   const [staffForm, setStaffForm] = useState({
@@ -206,15 +211,29 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
     }
   };
 
-  const handleDeleteUser = async (userId: string, email: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa tài khoản ${email}?`)) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const targetName = deleteTarget.name;
+    const targetType = deleteTarget.type === 'user' ? 'tài khoản' : deleteTarget.type === 'escooter' ? 'xe máy điện' : 'ô tô';
+    const targetId = deleteTarget.id;
+    const type = deleteTarget.type;
+
     try {
       setLoading(true);
-      await api.deleteUser(userId);
-      setMsg(`Đã xóa thành công tài khoản ${email}`);
+      setDeleteTarget(null); // Tự động đóng Modal Xóa
+
+      if (type === 'user') {
+        await api.deleteUser(targetId);
+      } else if (type === 'car') {
+        await api.deleteCar(targetId);
+      } else if (type === 'escooter') {
+        await api.deleteEScooter(targetId);
+      }
+
+      setMsg(`🎉 Đã xóa thành công ${targetType} ${targetName} khỏi PostgreSQL!`);
       fetchData();
     } catch (err: any) {
-      setMsg(err.message || 'Xóa tài khoản thất bại.');
+      setMsg(err.message || `Xóa ${targetType} thất bại.`);
     } finally {
       setLoading(false);
     }
@@ -438,15 +457,25 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
         formData.append('image_url', carForm.image_url);
       }
 
+      const isScooter = activeTab === 'escooters' || carForm.category === 'scooter';
+
       if (editingCar) {
-        // Edit Car
-        await api.updateCar(editingCar.id, formData);
-        setMsg(`Đã cập nhật thông tin và hình ảnh mẫu xe ${carForm.name}`);
+        if (isScooter) {
+          await api.updateEScooter(editingCar.id, formData);
+          setMsg(`Đã cập nhật thông tin và hình ảnh xe máy điện ${carForm.name}`);
+        } else {
+          await api.updateCar(editingCar.id, formData);
+          setMsg(`Đã cập nhật thông tin và hình ảnh ô tô ${carForm.name}`);
+        }
       } else {
-        // Create Car
         formData.append('code', carForm.code);
-        await api.createCar(formData);
-        setMsg(`Đã thêm mẫu xe mới ${carForm.name} vào PostgreSQL!`);
+        if (isScooter) {
+          await api.createEScooter(formData);
+          setMsg(`Đã thêm mẫu xe máy điện mới ${carForm.name} vào PostgreSQL!`);
+        } else {
+          await api.createCar(formData);
+          setMsg(`Đã thêm mẫu ô tô điện mới ${carForm.name} vào PostgreSQL!`);
+        }
       }
 
       setShowCarModal(false);
@@ -458,18 +487,8 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
     }
   };
 
-  const handleDeleteCar = async (carId: string, carName: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa mẫu xe ${carName}?`)) return;
-    try {
-      setLoading(true);
-      await api.deleteCar(carId);
-      setMsg(`Đã xóa thành công mẫu xe ${carName}`);
-      fetchData();
-    } catch (err: any) {
-      setMsg(err.message || 'Xóa mẫu xe thất bại.');
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteCar = (carId: string, carName: string) => {
+    setDeleteTarget({ type: 'car', id: carId, name: carName });
   };
 
   const handleToggleCarAvailability = async (car: any) => {
@@ -893,7 +912,7 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
                               <Edit3 size={16} />
                             </button>
                             <button
-                              onClick={() => handleDeleteUser(u.id, u.email)}
+                              onClick={() => setDeleteTarget({ type: 'user', id: u.id, name: u.email })}
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Xóa tài khoản"
                             >
@@ -1217,13 +1236,9 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
                               <span>Sửa xe</span>
                             </button>
                             <button
-                              onClick={async () => {
-                                if (window.confirm(`Bạn muốn xóa xe máy điện ${s.name}?`)) {
-                                  await api.deleteEScooter(s.id);
-                                  fetchData();
-                                }
-                              }}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-xl"
+                              onClick={() => setDeleteTarget({ type: 'escooter', id: s.id, name: s.name })}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                              title="Xóa xe máy điện"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -1540,13 +1555,18 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Phân loại mẫu xe</label>
                     <select
-                      value={carForm.category || 'suv'}
+                      value={carForm.category || (activeTab === 'escooters' ? 'scooter' : 'suv')}
                       onChange={(e) => setCarForm({ ...carForm, category: e.target.value })}
                       className="w-full text-xs p-2.5 border rounded-xl bg-white font-semibold"
                     >
-                      <option value="suv">Ô tô điện (SUV / Sedan)</option>
-                      <option value="scooter">Xe máy điện (E-Scooter)</option>
-                      <option value="commercial">Xe thương mại &amp; Dịch vụ (Bus / Taxi / Bán tải)</option>
+                      {activeTab === 'escooters' || carForm.category === 'scooter' ? (
+                        <option value="scooter">Xe máy điện (E-Scooter)</option>
+                      ) : (
+                        <>
+                          <option value="suv">Ô tô điện (SUV / Sedan)</option>
+                          <option value="commercial">Xe thương mại &amp; Dịch vụ (Bus / Taxi / Bán tải)</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div>
@@ -1898,6 +1918,59 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
             </div>
 
           </form>
+        </div>
+      )}
+
+      {/* Sleek Custom Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[300] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn font-sans">
+          <div className="bg-white rounded-3xl shadow-2xl border border-red-100 max-w-md w-full p-6 text-center space-y-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="mx-auto w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center shadow-inner">
+              <AlertTriangle size={32} />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-slate-900">
+                Xác Nhận Xóa {deleteTarget.type === 'user' ? 'Tài Khoản' : deleteTarget.type === 'escooter' ? 'Xe Máy Điện' : 'Mẫu Ô Tô'}
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                Bạn có chắc chắn muốn xóa vĩnh viễn dữ liệu này khỏi hệ thống PostgreSQL?
+              </p>
+            </div>
+
+            <div className="p-3 bg-red-50/80 rounded-2xl border border-red-200/60 text-xs font-bold text-slate-800 break-words">
+              <span className="text-red-700 block text-[10px] uppercase font-black tracking-wider mb-0.5">Đối tượng sẽ xóa:</span>
+              <span className="text-slate-900 font-extrabold text-sm">{deleteTarget.name}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={loading}
+                className="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all active:scale-95"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={loading}
+                className="py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-extrabold text-xs transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                {loading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    <span>Đồng ý xóa</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
