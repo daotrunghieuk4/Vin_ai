@@ -15,12 +15,14 @@ import AftersalesPage from '@/pages/AftersalesPage';
 import ChargingPage from '@/pages/ChargingPage';
 import EnergyPage from '@/pages/EnergyPage';
 import VehicleDetailModal from '@/components/VehicleDetailModal';
+import CompareModal from '@/components/CompareModal';
 import logoVinFast from '/VIN png/Pin/VinFast-logo.png';
 import type { Role, Vehicle, FilterCategory, UserAccount } from '@/types';
 
 export default function App() {
   const [role, setRole] = useState<Role>('customer');
   const [compareList, setCompareList] = useState<string[]>([]);
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
   const [staffDrawerOpen, setStaffDrawerOpen] = useState(false);
   const [adminDashboardOpen, setAdminDashboardOpen] = useState(false);
   const [adminPortalOpen, setAdminPortalOpen] = useState(false);
@@ -53,14 +55,37 @@ export default function App() {
     }
   }, []);
 
+  const handleOpenCompare = useCallback(() => {
+    setCompareModalOpen(true);
+    if (!window.location.hash.startsWith('#compare')) {
+      window.history.pushState({ modal: 'compare' }, '', '#compare');
+    }
+  }, []);
+
+  const handleCloseCompare = useCallback(() => {
+    setCompareModalOpen(false);
+    if (window.location.hash.startsWith('#compare')) {
+      window.history.back();
+    }
+  }, []);
+
   useEffect(() => {
     const handlePopState = () => {
       if (!window.location.hash.startsWith('#detail')) {
         setDetailModalOpen(false);
       }
+      if (!window.location.hash.startsWith('#compare')) {
+        setCompareModalOpen(false);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash.startsWith('#compare')) {
+      setCompareModalOpen(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -88,10 +113,51 @@ export default function App() {
 
   const handleClearCompare = useCallback(() => setCompareList([]), []);
 
+  const handleAddCompare = useCallback((id: string) => {
+    setCompareList((prev) => {
+      let currentList = [...prev];
+      if (currentList.length < 2 && vehicles.length >= 2) {
+        const defaultIds = vehicles.slice(0, 2).map((v) => v.id);
+        currentList = Array.from(new Set([...defaultIds, ...currentList]));
+      }
+      if (currentList.includes(id)) return currentList;
+      if (currentList.length >= 3) return currentList;
+      return [...currentList, id];
+    });
+  }, [vehicles]);
+
+  const handleReplaceCompare = useCallback((oldId: string, newId: string) => {
+    setCompareList((prev) => {
+      let currentList = [...prev];
+      if (currentList.length < 2 && vehicles.length >= 2) {
+        const defaultIds = vehicles.slice(0, 2).map((v) => v.id);
+        currentList = Array.from(new Set([...defaultIds, ...currentList]));
+      }
+      return currentList.map((item) => (item === oldId ? newId : item));
+    });
+  }, [vehicles]);
+
+  useEffect(() => {
+    if (compareModalOpen && compareList.length < 2 && vehicles.length >= 2) {
+      setCompareList(vehicles.slice(0, 2).map((v) => v.id));
+    }
+  }, [compareModalOpen, compareList.length, vehicles]);
+
   const handleNavClick = useCallback((section: string) => {
     if (section === 'chat') {
       setChatOpen(true);
       return;
+    }
+
+    if (section === 'compare') {
+      handleOpenCompare();
+      return;
+    }
+
+    // When clicking logo, hero, or any other section, close compare modal and return home
+    setCompareModalOpen(false);
+    if (window.location.hash.startsWith('#compare')) {
+      window.history.pushState(null, '', window.location.pathname);
     }
 
     if (section === 'aftersales' || section === 'charging' || section === 'energy') {
@@ -104,11 +170,11 @@ export default function App() {
     setCurrentView('home');
 
     setTimeout(() => {
-      const targetId = section === 'compare' ? 'showcase' : section;
+      const targetId = section === 'hero' ? 'top' : section;
       const el = document.getElementById(targetId) ?? document.documentElement;
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
-  }, []);
+  }, [handleOpenCompare]);
 
   const handleSelectCategory = useCallback((category: FilterCategory) => {
     setActiveCategory(category);
@@ -481,8 +547,23 @@ export default function App() {
       {/* Compare bar */}
       <CompareBar
         compareList={compareList}
+        allVehicles={vehicles}
         onClear={handleClearCompare}
         onRemove={handleRemoveCompare}
+        onOpenCompare={handleOpenCompare}
+      />
+
+      {/* Compare Modal Matrix */}
+      <CompareModal
+        open={compareModalOpen}
+        onClose={handleCloseCompare}
+        selectedIds={compareList}
+        allVehicles={vehicles}
+        onRemoveVehicle={handleRemoveCompare}
+        onAddVehicle={handleAddCompare}
+        onReplaceVehicle={handleReplaceCompare}
+        onRequestQuote={handleRequestQuote}
+        onOpenChatWithCompare={() => setChatOpen(true)}
       />
 
       {/* AI Chat */}

@@ -1,16 +1,19 @@
 import { X, ArrowRight } from 'lucide-react';
-import { vehicles } from '@/data/vehicles';
+import type { Vehicle } from '@/types';
+import { getImageUrl } from '@/lib/api';
 
 interface CompareBarProps {
   compareList: string[];
+  allVehicles?: Vehicle[];
   onClear: () => void;
   onRemove: (id: string) => void;
+  onOpenCompare: () => void;
 }
 
-export default function CompareBar({ compareList, onClear, onRemove }: CompareBarProps) {
+export default function CompareBar({ compareList, allVehicles = [], onClear, onRemove, onOpenCompare }: CompareBarProps) {
   if (compareList.length < 2) return null;
 
-  const selected = compareList.map((id) => vehicles.find((v) => v.id === id)).filter(Boolean);
+  const selected = compareList.map((id) => allVehicles.find((v) => v.id === id)).filter((v): v is Vehicle => Boolean(v));
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-2xl animate-slide-up">
@@ -20,13 +23,13 @@ export default function CompareBar({ compareList, onClear, onRemove }: CompareBa
             <div className="text-xs sm:text-sm font-bold text-gray-800 shrink-0">
               So sánh ({compareList.length}/3):
             </div>
-            {selected.map((vehicle) => vehicle && (
+            {selected.map((vehicle) => (
               <div
                 key={vehicle.id}
                 className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-xl shrink-0 group text-xs sm:text-sm"
               >
                 <img
-                  src={vehicle.image}
+                  src={getImageUrl(vehicle.image)}
                   alt={vehicle.name}
                   className="w-8 h-6 sm:w-10 sm:h-7 object-cover rounded-lg"
                 />
@@ -48,7 +51,10 @@ export default function CompareBar({ compareList, onClear, onRemove }: CompareBa
             >
               Xóa tất cả
             </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 sm:px-5 sm:py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-md">
+            <button
+              onClick={onOpenCompare}
+              className="flex items-center gap-1.5 px-4 py-2 sm:px-5 sm:py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-md active:scale-95"
+            >
               So sánh ngay
               <ArrowRight size={14} />
             </button>

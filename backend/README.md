@@ -48,8 +48,11 @@ Sao chép cấu hình mẫu từ `.env.example` (Đã được thiết lập s�
 Copy-Item .env.example .env
 ```
 
-### 4. Nạp Dữ liệu Mẫu (Vehicle & User Seed Data)
-Chạy script để tự động tạo schema các bảng và nạp 31 dòng xe VinFast + 3 tài khoản thử nghiệm lên Supabase:
+### 4. Nạp Dữ liệu Mẫu (Seed Data - *Tùy chọn / Optional*)
+> 💡 **Lưu ý quan trọng**: 
+> - **Nếu bạn đang kết nối Supabase Cloud đã có sẵn dữ liệu**: **BỎ QUA bước này!** Dữ liệu 31 xe và các tài khoản demo đã sẵn sàng trên Cloud.
+> - **Khi nào cần chạy**: Chỉ chạy khi khởi tạo một Cơ sở dữ liệu mới tinh (ví dụ: DB SQLite local mới hoặc Project Supabase mới chưa có bảng) hoặc khi muốn reset lại toàn bộ dữ liệu mẫu.
+
 ```powershell
 python seed_cars.py
 ```
